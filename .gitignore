@@ -1,0 +1,7 @@
+# Runtime caches and logs written by server.py
+data/
+__pycache__/
+*.pyc
+.DS_Store
+# Local Claude/editor settings
+.claude/settings.local.json

@@ -1,0 +1,948 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rinkside</title>
+<meta name="description" content="Follow NHL, PWHL, IIHF and Olympic hockey teams and players, in your local time, with one-tap Apple Calendar subscriptions.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Cstyle%3E.i%7Bstroke:%230d1726%7D.f%7Bfill:%230d1726%7D.b%7Bstroke:%23fff%7D%40media (prefers-color-scheme:dark)%7B.i%7Bstroke:%23eef2f8%7D.f%7Bfill:%23eef2f8%7D.b%7Bstroke:%230a0f18%7D%7D%3C/style%3E%3Cpath class=%22i%22 d=%22M17 57V9H31C40 9 44.5 14.5 44.5 21.5C44.5 28 36 34 27 37.5H17%22 fill=%22none%22 stroke-width=%228.5%22 stroke-linejoin=%22round%22/%3E%3Cpath class=%22i%22 d=%22M3.9 4L35.2 48.7%22 stroke-width=%226.5%22/%3E%3Cpath d=%22M21 28.2L23.2 31.3%22 stroke=%22%23E5263A%22 stroke-width=%226.5%22/%3E%3Cpath class=%22f b%22 d=%22M37.2 46.8Q38.5 53.5 41.5 53.5H58Q62 53.5 62 57Q62 60.5 58 60.5H40.5Q34 60.5 33 50Z%22 stroke-width=%221.5%22/%3E%3Cpath d=%22M46 55.3H58Q60 55.3 60 57Q60 58.7 58 58.7H46Z%22 fill=%22%23fff%22/%3E%3Cpath class=%22i%22 d=%22M3.4 3.3L8.6 10.6%22 stroke-width=%228.5%22/%3E%3Cpath d=%22M3.4 3.3L8.6 10.6%22 stroke=%22%23fff%22 stroke-width=%225.5%22/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f6f9; --panel:#ffffff; --panel-2:#eef1f6; --ink:#0d1726; --ink-2:#4a5568; --ink-3:#8a94a6;
+  --line:#e1e6ee; --accent:#0b5fff; --accent-ink:#ffffff; --accent-soft:#e3ecff;
+  --live:#e5263a; --good:#0f9d58;
+  --nhl:#111827; --pwhl:#5b2bd6; --iihf:#0077c8; --oly:#c48a00;
+  --shadow:0 1px 2px rgba(13,23,38,.06),0 4px 16px rgba(13,23,38,.05);
+  --radius:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0a0f18; --panel:#121a27; --panel-2:#192334; --ink:#eef2f8; --ink-2:#a9b4c6; --ink-3:#6c788d;
+    --line:#223047; --accent:#4d8dff; --accent-ink:#06101f; --accent-soft:#16284a;
+    --nhl:#e8ecf3; --pwhl:#a685ff; --iihf:#4fb3ff; --oly:#f2c14e;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0a0f18; --panel:#121a27; --panel-2:#192334; --ink:#eef2f8; --ink-2:#a9b4c6; --ink-3:#6c788d;
+  --line:#223047; --accent:#4d8dff; --accent-ink:#06101f; --accent-soft:#16284a;
+  --nhl:#e8ecf3; --pwhl:#a685ff; --iihf:#4fb3ff; --oly:#f2c14e;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Inter,system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+a{color:inherit}
+.wrap{max-width:1120px;margin:0 auto;padding:20px 16px 80px}
+header.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:22px;letter-spacing:-.02em}
+.logo-mark{flex:none;--tapeline:#B4B2A9}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .logo-mark{--tapeline:#888780}}
+:root[data-theme="dark"] .logo-mark{--tapeline:#888780}
+.tz{margin-left:auto;display:flex;align-items:center;gap:10px;color:var(--ink-2);font-size:13px;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:var(--panel);border:1px solid var(--line)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--good)}
+.dot.stale{background:#e0a800}.dot.err{background:var(--live)}
+.layout{display:grid;grid-template-columns:340px 1fr;gap:18px;align-items:start}
+@media (max-width:900px){.layout{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3);margin:0 0 10px;font-weight:700}
+.side{position:sticky;top:16px;display:flex;flex-direction:column;gap:14px}
+@media (max-width:900px){.side{position:static}}
+.sec{padding:16px}
+.tabs{display:flex;gap:4px;background:var(--panel-2);padding:4px;border-radius:10px;margin-bottom:12px}
+.tabs button{flex:1;border:0;background:transparent;padding:7px 4px;border-radius:7px;font-weight:600;font-size:13px;color:var(--ink-2);cursor:pointer}
+.tabs button.on{background:var(--panel);color:var(--ink);box-shadow:var(--shadow)}
+.search{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel-2);outline:none}
+.search:focus{border-color:var(--accent)}
+.list{max-height:360px;overflow:auto;margin:10px -6px 0;padding:0 6px}
+.item{display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;cursor:pointer;border:1px solid transparent}
+.item:hover{background:var(--panel-2)}
+.item.on{border-color:var(--accent);background:var(--accent-soft)}
+.item .nm{font-weight:600;font-size:14px}
+.item .dt{font-size:12px;color:var(--ink-3)}
+.item .add{margin-left:auto;font-size:18px;color:var(--accent);font-weight:700;width:24px;text-align:center}
+.logo{width:28px;height:28px;object-fit:contain;flex:none}
+.flag{width:28px;text-align:center;font-size:20px;flex:none;line-height:28px}
+.mug{width:32px;height:32px;border-radius:50%;object-fit:cover;background:var(--panel-2);flex:none}
+.initials{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--panel-2);font-size:12px;font-weight:700;color:var(--ink-2);flex:none}
+.grp{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3);margin:12px 8px 4px;font-weight:700}
+.follows{display:flex;flex-direction:column;gap:6px}
+.fol{display:flex;align-items:center;gap:10px;padding:8px 8px 8px 10px;border-radius:10px;background:var(--panel-2)}
+.fol .nm{font-weight:600;font-size:14px;line-height:1.2}
+.fol .dt{font-size:12px;color:var(--ink-3)}
+.icon-btn{border:0;background:transparent;cursor:pointer;color:var(--ink-3);width:30px;height:30px;border-radius:8px;display:grid;place-items:center;flex:none}
+.icon-btn:hover{background:var(--panel);color:var(--ink)}
+.icon-btn.cal:hover{color:var(--accent)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:10px;padding:11px 14px;font-weight:700;cursor:pointer;text-decoration:none}
+.btn.primary{background:var(--accent);color:var(--accent-ink);width:100%}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.ghost{background:var(--panel-2);color:var(--ink)}
+.btn.sm{padding:6px 10px;font-size:13px;border-radius:8px}
+.muted{color:var(--ink-3);font-size:13px}
+.row{display:flex;gap:8px;align-items:center}
+select.sel{padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel-2)}
+.empty{padding:40px 24px;text-align:center;color:var(--ink-2)}
+.empty h3{color:var(--ink);margin:0 0 6px;font-size:18px}
+.quick{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:14px}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--line)}
+.chip{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:5px 11px;font-size:13px;font-weight:600;cursor:pointer;color:var(--ink-2);white-space:nowrap}
+.chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.toolbar .sp{flex:1}
+label.tog{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-2);cursor:pointer}
+.day{padding:4px 0}
+.dayh{position:sticky;top:0;z-index:1;background:var(--panel);padding:12px 16px 6px;font-weight:800;font-size:14px;display:flex;gap:8px;align-items:baseline;border-bottom:1px solid var(--line)}
+.dayh .sub{font-weight:500;color:var(--ink-3);font-size:12px}
+.game{display:grid;grid-template-columns:86px 1fr auto;gap:14px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line)}
+.game:last-child{border-bottom:0}
+.game.past{opacity:.72}
+@media (max-width:560px){.game{grid-template-columns:64px 1fr;gap:10px}.game .right{grid-column:2;justify-self:start}}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .teams img,:root:not([data-theme="light"]) .logo{background:#f4f6f9;border-radius:7px;padding:2px}}
+:root[data-theme="dark"] .teams img,:root[data-theme="dark"] .logo{background:#f4f6f9;border-radius:7px;padding:2px}
+.time{font-family:"JetBrains Mono",ui-monospace,monospace;font-weight:600;font-size:15px}
+.time small{display:block;font-family:Inter,sans-serif;font-size:11px;color:var(--ink-3);font-weight:500}
+.time .night{display:inline-block;margin-top:3px;font-family:Inter,sans-serif;font-size:10.5px;font-weight:700;color:var(--pwhl);background:var(--panel-2);border-radius:999px;padding:1px 7px;white-space:nowrap}
+.match{min-width:0}
+.teams{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px;flex-wrap:wrap}
+.teams img{width:24px;height:24px;object-fit:contain}
+.teams .f{font-size:18px}
+.teams .at{color:var(--ink-3);font-weight:600;font-size:13px}
+.meta{font-size:12.5px;color:var(--ink-3);margin-top:3px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.lg{font-size:10.5px;font-weight:800;letter-spacing:.06em;padding:2px 6px;border-radius:5px;border:1px solid currentColor}
+.lg.NHL{color:var(--nhl)}.lg.PWHL{color:var(--pwhl)}.lg.IIHF{color:var(--iihf)}.lg.OLY{color:var(--oly)}
+.tag{font-size:11px;padding:1px 7px;border-radius:999px;background:var(--panel-2);color:var(--ink-2)}
+.right{text-align:right}
+.score{font-family:"JetBrains Mono",monospace;font-weight:600;font-size:16px}
+.st{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.st.live{color:var(--live);display:inline-flex;gap:5px;align-items:center}
+.st.live::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--live);animation:p 1.2s infinite}
+@keyframes p{50%{opacity:.25}}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;font-size:14px;opacity:0;transition:.25s;pointer-events:none;z-index:9;max-width:calc(100% - 32px)}
+.toast.show{opacity:1;transform:translateX(-50%)}
+.sh-wrap{position:fixed;inset:0;background:rgba(5,10,20,.45);display:grid;place-items:center;z-index:20;padding:16px}
+.sh-wrap[hidden]{display:none}
+.sh-card{position:relative;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.35);max-width:460px;width:100%;padding:22px 22px 18px;max-height:calc(100vh - 32px);overflow:auto}
+.sh-card h3{margin:0 28px 8px 0;font-size:18px}
+.sh-card p{margin:0 0 8px;color:var(--ink-2)}
+.sh-card ol{margin:0 0 12px;padding-left:20px;color:var(--ink-2);display:grid;gap:6px}
+.sh-card b{color:var(--ink)}
+.sh-x{position:absolute;top:12px;right:12px}
+.copy{display:flex;gap:6px;margin-top:8px}
+.copy input{flex:1;min-width:0;font-family:"JetBrains Mono",monospace;font-size:11.5px;padding:7px 8px;border-radius:8px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink-2)}
+details summary{cursor:pointer;color:var(--ink-2);font-size:13px;font-weight:600}
+.sources{font-size:12px;color:var(--ink-3);display:grid;gap:4px;margin-top:8px}
+.sources div{display:flex;gap:6px;align-items:center}
+.spin{width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:s .8s linear infinite;display:inline-block}
+@keyframes s{to{transform:rotate(360deg)}}
+.loading{padding:30px;text-align:center;color:var(--ink-3)}
+.regsel{border:0;background:transparent;color:var(--ink-2);font-size:13px;cursor:pointer;outline:none;max-width:150px}
+.regsel option{color:#0d1726}
+.watch{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px;align-items:center}
+.watch .wl{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-right:2px}
+.watch a,.watch span.nolink{font-size:12px;font-weight:600;text-decoration:none;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--ink);background:var(--panel);white-space:nowrap}
+.watch a:hover{border-color:var(--accent);color:var(--accent)}
+.watch a.free{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+.watch span.nolink{color:var(--ink-3)}
+.watch small{font-weight:500;color:var(--ink-3);margin-left:3px}
+.lgb{font-size:10px;font-weight:800;letter-spacing:.06em;padding:1px 5px;border-radius:4px;border:1px solid currentColor;margin-right:4px;vertical-align:1px}
+.lgb.NHL{color:var(--nhl)}.lgb.PWHL{color:var(--pwhl)}
+.seg{display:inline-flex;background:var(--panel-2);border-radius:9px;padding:3px;margin-right:6px}
+.seg button{border:0;background:transparent;padding:5px 11px;border-radius:7px;font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer;white-space:nowrap}
+.seg button.on{background:var(--panel);color:var(--ink);box-shadow:var(--shadow)}
+.cdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:0}
+.chip.on .cdot{box-shadow:0 0 0 1.5px var(--bg)}
+.ev,.game,.cdot,.cal-dots i,.fol{--fcv:var(--fc,transparent)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) :is(.ev,.game,.cdot,.cal-dots i,.fol){--fcv:color-mix(in srgb,var(--fc,transparent) 68%,#fff)}}
+:root[data-theme="dark"] :is(.ev,.game,.cdot,.cal-dots i,.fol){--fcv:color-mix(in srgb,var(--fc,transparent) 68%,#fff)}
+.game{border-left:3px solid var(--fcv)}
+.cdot,.cal-dots i{background:var(--fcv)}
+.fol{border-left:4px solid var(--fcv)}
+.cal-head{display:flex;align-items:center;gap:8px;padding:14px 16px 10px}
+.cal-head h3{margin:0;font-size:18px;font-weight:800;letter-spacing:-.01em;min-width:150px;text-align:center}
+.cal-head .icon-btn{font-size:22px;line-height:1}
+.cal-head .sp{flex:1}
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-top:1px solid var(--line);border-left:1px solid var(--line);margin:0 16px}
+.cal-wd{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);padding:6px 8px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--panel-2)}
+.cal-cell{min-height:112px;padding:5px 5px 6px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);cursor:pointer;display:flex;flex-direction:column;gap:3px;min-width:0;outline:none}
+.cal-cell:hover{background:var(--panel-2)}
+.cal-cell:focus-visible{box-shadow:inset 0 0 0 2px var(--accent)}
+.cal-cell.out{background:color-mix(in srgb,var(--panel-2) 55%,transparent)}
+.cal-cell.out .cal-num{color:var(--ink-3);opacity:.6}
+.cal-cell.sel{box-shadow:inset 0 0 0 2px var(--accent)}
+.cal-num{font-size:12.5px;font-weight:700;color:var(--ink-2);width:24px;height:24px;display:grid;place-items:center;border-radius:50%}
+.cal-cell.today .cal-num{background:var(--accent);color:var(--accent-ink)}
+.cal-evs{display:flex;flex-direction:column;gap:3px;min-width:0}
+.ev{font-size:11.5px;line-height:1.25;padding:3px 5px 3px 6px;border-radius:5px;border-left:3px solid var(--fcv);background:color-mix(in srgb,var(--fcv) 16%,var(--panel));color:var(--ink);min-width:0}
+.ev .evt{display:block;color:var(--ink-2);font-size:10.5px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ev .evn{display:block;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.01em}
+.ev.final{opacity:.62}
+.ev .lv{color:var(--live)}
+.more{font-size:11px;color:var(--ink-3);font-weight:600;padding-left:4px}
+.cal-dots{display:none;gap:3px;justify-content:center;margin-top:auto}
+.cal-dots i{width:6px;height:6px;border-radius:50%;display:block}
+.cal-day{margin-top:14px;border-top:1px solid var(--line)}
+/* league-specific chip styles: NHL plain bar, PWHL premium (full outline, richer fill, glow, star), international double bar */
+.ev.L-NHL{border-left:3px solid var(--fcv)}
+.ev.L-PWHL{border:1.5px solid var(--fcv);border-left-width:4px;padding:2px 4px 2px 5px;background:linear-gradient(135deg,color-mix(in srgb,var(--fcv) 30%,var(--panel)),color-mix(in srgb,var(--fcv) 12%,var(--panel)));box-shadow:0 1px 4px color-mix(in srgb,var(--fcv) 40%,transparent)}
+.ev.L-PWHL .evt{display:flex;justify-content:space-between;gap:4px}
+.ev.L-PWHL .evt::after{content:"★";color:var(--fcv);font-size:11px;line-height:1}
+.ev.L-PWHL.final{opacity:.78}
+.ev.L-IIHF,.ev.L-OLY{border-left:5px double var(--fcv)}
+.cal-dots i.L-PWHL{border-radius:1.5px;transform:rotate(45deg);width:7px;height:7px;box-shadow:0 0 0 1.5px color-mix(in srgb,var(--fcv) 35%,transparent),0 0 5px var(--fcv)}
+.cal-dots i.L-IIHF,.cal-dots i.L-OLY{background:transparent;box-shadow:inset 0 0 0 1.5px var(--fcv)}
+.cal-legend{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;padding:10px 16px 0;font-size:12px;font-weight:600;color:var(--ink-2)}
+.cal-legend span{display:inline-flex;align-items:center;gap:6px}
+.cal-legend .muted{font-weight:500;margin-left:auto}
+.lg-sw{display:inline-block;width:22px;height:14px;border-radius:4px;--fcv:var(--ink-2);background:color-mix(in srgb,var(--ink-2) 10%,var(--panel))}
+.lg-sw.L-NHL{border-left:3px solid var(--fcv)}
+.lg-sw.L-PWHL{border:1.5px solid var(--fcv);border-left-width:4px;background:linear-gradient(135deg,color-mix(in srgb,var(--ink-2) 28%,var(--panel)),color-mix(in srgb,var(--ink-2) 10%,var(--panel)));box-shadow:0 1px 4px color-mix(in srgb,var(--ink-2) 40%,transparent)}
+.lg-sw.L-IIHF{border-left:5px double var(--fcv)}
+@media (max-width:640px){
+  .lg-sw{width:8px;height:8px;border:0!important;border-radius:50%;background:var(--ink-2)}
+  .lg-sw.L-PWHL{border-radius:1.5px;transform:rotate(45deg);width:8px;height:8px;box-shadow:0 0 5px var(--ink-2)}
+  .lg-sw.L-IIHF{background:transparent;box-shadow:inset 0 0 0 1.5px var(--ink-2)}
+  .cal-legend .muted{margin-left:0}
+}
+
+@media (max-width:640px){
+  .cal-grid{margin:0 8px}
+  .cal-cell{min-height:58px;align-items:center;padding:4px 2px}
+  .cal-evs{display:none}
+  .cal-dots{display:flex}
+  .cal-head h3{min-width:0;font-size:16px;white-space:nowrap}
+  .cal-head .muted{display:none}
+  .cal-wd{padding:6px 2px;text-align:center;font-size:10px}
+}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><svg class="logo-mark" width="38" height="38" viewBox="0 0 64 64" role="img" aria-label="Rinkside logo">
+      <defs><clipPath id="bladeTapeClip"><path d="M45.5 54 H58 Q61 54 61 57 Q61 60 58 60 H45.5 Z"/></clipPath></defs>
+      <path d="M17 55 V10 H31 C39 10 43.5 15 43.5 21.5 C43.5 27.5 36 33.5 27 37 H17" fill="none" stroke="var(--ink)" stroke-width="6.5" stroke-linejoin="round"/>
+      <g transform="translate(3.9 4) rotate(55)"><rect x="0" y="-2.2" width="52" height="4.4" rx="1" fill="var(--ink)" stroke="var(--bg)" stroke-width="1.4" paint-order="stroke"/></g>
+      <path d="M34.38 43.70 L37.02 47.46 C39.03 50.33 41.6 54 44.4 54 H58 Q61 54 61 57 Q61 60 58 60 H42.6 C38.6 60 36.57 54.49 33.42 49.99 L30.78 46.22 Z" fill="var(--ink)" stroke="var(--bg)" stroke-width="1.4" paint-order="stroke"/>
+      <path d="M34.38 43.70 L37.02 47.46 C39.03 50.33 41.6 54 44.4 54 H58 Q61 54 61 57 Q61 60 58 60 H42.6 C38.6 60 36.57 54.49 33.42 49.99 L30.78 46.22 Z" fill="var(--ink)"/>
+      <g transform="translate(3.9 4) rotate(55)">
+        <rect x="0" y="-2.2" width="52" height="4.4" rx="1" fill="var(--ink)"/>
+        <rect x="29.5" y="-2.2" width="1.8" height="4.4" fill="#E5263A"/><rect x="32.9" y="-2.2" width="1.8" height="4.4" fill="#E5263A"/>
+        <rect x="0.6" y="-2.2" width="9" height="4.4" fill="#fff" stroke="var(--ink)" stroke-width="0.7"/>
+        <g stroke="var(--tapeline)" stroke-width="0.6"><line x1="3.3" y1="-2.2" x2="2.4" y2="2.2"/><line x1="5.5" y1="-2.2" x2="4.6" y2="2.2"/><line x1="7.7" y1="-2.2" x2="6.8" y2="2.2"/></g>
+        <rect x="-1.5" y="-3" width="3" height="6" rx="1.3" fill="#fff" stroke="var(--ink)" stroke-width="0.7"/>
+      </g>
+      <g clip-path="url(#bladeTapeClip)"><rect x="45.5" y="53.5" width="16" height="7" fill="#fff"/><g stroke="var(--tapeline)" stroke-width="0.6"><line x1="50" y1="53.5" x2="50" y2="60.5"/><line x1="54.5" y1="53.5" x2="54.5" y2="60.5"/></g></g>
+      <path d="M45.5 54 H58 Q61 54 61 57 Q61 60 58 60 H45.5 Z" fill="none" stroke="var(--ink)" stroke-width="0.7"/>
+    </svg>Rinkside</div>
+    <div class="tz">
+      <span class="pill" id="tzPill">🕒 <span id="tzName"></span></span>
+      <label class="pill" title="Where you watch from, used for streaming links">📺 <select id="regionSel" class="regsel" aria-label="Watch region"></select></label>
+      <span class="pill" id="freshPill"><span class="dot" id="freshDot"></span><span id="freshTxt">Loading…</span></span>
+      <button class="icon-btn" id="themeBtn" title="Toggle theme" aria-label="Toggle theme">◐</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="side">
+      <div class="card sec">
+        <h2>Following</h2>
+        <div class="follows" id="follows"></div>
+        <div id="subBox" style="margin-top:12px"></div>
+      </div>
+
+      <div class="card sec">
+        <h2>Add teams &amp; players</h2>
+        <div class="tabs" id="tabs">
+          <button data-t="NHL" class="on">NHL</button>
+          <button data-t="PWHL">PWHL</button>
+          <button data-t="INTL">Int'l</button>
+          <button data-t="PLAYER">Players</button>
+        </div>
+        <div id="addPane"></div>
+      </div>
+
+      <div class="card sec">
+        <details>
+          <summary>Data sources &amp; status</summary>
+          <div class="sources" id="sources"></div>
+        </details>
+      </div>
+    </aside>
+
+    <main class="card" id="main">
+      <div class="toolbar" id="toolbar"></div>
+      <div id="sched"><div class="loading"><span class="spin"></span></div></div>
+    </main>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<div class="sh-wrap" id="subHelp" hidden></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+
+// ---- state
+let follows = store.get("rinkside.follows", []);   // [{key,name,detail,img,flag,logo}]
+let tab = store.get("rinkside.tab", "NHL");
+let filter = "ALL";
+let showPast = store.get("rinkside.past", false);
+let alarm = store.get("rinkside.alarm", 30);
+let events = [], meta = {}, lastFetch = 0, lanUrl = null;
+
+// ---- watch region (from the device time zone / locale, overridable)
+const REGIONS = {US:"United States",CA:"Canada",GB:"United Kingdom",SE:"Sweden",FI:"Finland",NO:"Norway",DK:"Denmark",
+  DE:"Germany",AT:"Austria",CH:"Switzerland",CZ:"Czechia",SK:"Slovakia",FR:"France",IT:"Italy",LV:"Latvia",
+  SI:"Slovenia",HR:"Croatia",RS:"Serbia",AU:"Australia",NZ:"New Zealand",MX:"Mexico",BR:"Brazil",AR:"Argentina",
+  JP:"Japan",KR:"South Korea",CN:"China",SG:"Singapore",XX:"Elsewhere"};
+const TZ_COUNTRY = {
+  "America/Toronto":"CA","America/Montreal":"CA","America/Vancouver":"CA","America/Edmonton":"CA","America/Winnipeg":"CA",
+  "America/Halifax":"CA","America/St_Johns":"CA","America/Regina":"CA","America/Moncton":"CA","America/Whitehorse":"CA",
+  "America/Yellowknife":"CA","America/Iqaluit":"CA","America/Glace_Bay":"CA","America/Goose_Bay":"CA","America/Swift_Current":"CA",
+  "America/Dawson_Creek":"CA","America/Fort_Nelson":"CA","America/Thunder_Bay":"CA","America/Nipigon":"CA","America/Rainy_River":"CA",
+  "America/Mexico_City":"MX","America/Monterrey":"MX","America/Tijuana":"MX","America/Cancun":"MX",
+  "America/Sao_Paulo":"BR","America/Argentina/Buenos_Aires":"AR",
+  "Europe/London":"GB","Europe/Stockholm":"SE","Europe/Helsinki":"FI","Europe/Oslo":"NO","Europe/Copenhagen":"DK",
+  "Europe/Berlin":"DE","Europe/Vienna":"AT","Europe/Zurich":"CH","Europe/Prague":"CZ","Europe/Bratislava":"SK",
+  "Europe/Paris":"FR","Europe/Rome":"IT","Europe/Riga":"LV","Europe/Ljubljana":"SI","Europe/Zagreb":"HR","Europe/Belgrade":"RS",
+  "Atlantic/Reykjavik":"IS","Asia/Tokyo":"JP","Asia/Seoul":"KR","Asia/Shanghai":"CN","Asia/Singapore":"SG",
+  "Pacific/Auckland":"NZ"};
+function detectRegion(){
+  if (TZ_COUNTRY[TZ]) return TZ_COUNTRY[TZ];
+  if (TZ.startsWith("Australia/")) return "AU";
+  if (/^America\/(New_York|Chicago|Denver|Los_Angeles|Phoenix|Anchorage|Detroit|Boise|Indiana|Kentucky|North_Dakota|Juneau|Sitka|Nome|Menominee|Adak)/.test(TZ) || TZ.startsWith("Pacific/Honolulu")) return "US";
+  const loc = (navigator.languages && navigator.languages[0]) || navigator.language || "";
+  const m = loc.match(/-([A-Z]{2})$/i);
+  return m ? m[1].toUpperCase() : "XX";
+}
+const autoRegion = detectRegion();
+let region = store.get("rinkside.region", null) || autoRegion;
+function setupRegion(){
+  const sel = $("#regionSel");
+  const opts = Object.entries(REGIONS);
+  if (!REGIONS[autoRegion]) opts.unshift([autoRegion, autoRegion]);
+  sel.innerHTML = opts.map(([c,n]) => `<option value="${c}" ${c===region?"selected":""}>${esc(n)}${c===autoRegion?" (detected)":""}</option>`).join("");
+  sel.onchange = () => {
+    region = sel.value;
+    store.set("rinkside.region", region === autoRegion ? null : region);
+    renderFollows(); fetchSchedule();
+    toast(`Showing streaming options for ${REGIONS[region] || region}`);
+  };
+}
+const teamCache = {};
+
+// Allow sharing a set of follows by URL (?f=key,key)
+(() => {
+  const p = new URLSearchParams(location.search).get("f");
+  if (p && !follows.length) follows = p.split(",").map(key => ({key, name:key.split(":").slice(-1)[0]}));
+})();
+
+function saveFollows(){ store.set("rinkside.follows", follows); }
+function isFollowed(k){ return follows.some(f => f.key === k); }
+function flagEmoji(cc){ return cc ? cc.toUpperCase().replace(/./g, c => String.fromCodePoint(127397 + c.charCodeAt(0))) : "🏳️"; }
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("show"),2600); }
+
+// ---- theme
+(() => {
+  const saved = store.get("rinkside.theme", null);
+  if (saved) document.documentElement.dataset.theme = saved;
+  $("#themeBtn").onclick = () => {
+    const cur = document.documentElement.dataset.theme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    const nx = cur === "dark" ? "light" : "dark";
+    document.documentElement.dataset.theme = nx; store.set("rinkside.theme", nx);
+  };
+})();
+
+// ---- timezone label
+(() => {
+  const short = new Intl.DateTimeFormat(undefined,{timeZoneName:"short"}).formatToParts(new Date()).find(p=>p.type==="timeZoneName")?.value;
+  $("#tzName").textContent = `${TZ.replace(/_/g," ")}${short ? " · " + short : ""}`;
+})();
+
+// ---- follow list + subscribe
+function avatar(f){
+  if (f.logo) return `<img class="logo" src="${esc(f.logo)}" alt="" loading="lazy">`;
+  if (f.flag !== undefined) return `<div class="flag">${flagEmoji(f.flag)}</div>`;
+  if (f.img) return `<img class="mug" src="${esc(f.img)}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'initials',textContent:'${esc(initials(f.name))}'}))">`;
+  return `<div class="initials">${esc(initials(f.name))}</div>`;
+}
+function initials(n){ return String(n||"?").split(/\s+/).map(w=>w[0]).slice(0,2).join("").toUpperCase(); }
+
+function calUrl(keys, name, scheme="webcal"){
+  const base = (scheme === "webcal" ? "webcal://" : location.protocol + "//") + location.host;
+  const q = new URLSearchParams({f: keys.join(","), name, alarm: String(alarm), region});
+  return `${base}/cal.ics?${q}`;
+}
+function lanCalUrl(keys, name){
+  if (!lanUrl) return null;
+  const q = new URLSearchParams({f: keys.join(","), name, alarm: String(alarm), region});
+  return lanUrl.replace(/^https?:/, "webcal:") + "/cal.ics?" + q;
+}
+const ON_THIS_MAC = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+async function subscribe(keys, name){
+  const webcal = calUrl(keys, name), http = calUrl(keys, name, "http");
+  if (ON_THIS_MAC){
+    // Ask the Rinkside server (running on this Mac) to hand the subscription to Calendar.
+    // Works from any browser, including in-app ones that ignore webcal:// links.
+    try{
+      const r = await fetch("/api/subscribe", {method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({f: keys.join(","), name, alarm, region})});
+      const j = await r.json();
+      if (j.opened){ showSubHelp({opened:true, http, name}); return; }
+    }catch(e){}
+  }
+  // iPhone / iPad / other devices: Safari hands webcal:// links to Calendar itself
+  location.href = webcal;
+  showSubHelp({opened:false, http, webcal, name});
+}
+function showSubHelp({opened, http, webcal, name}){
+  const dlg = $("#subHelp");
+  dlg.innerHTML = `<div class="sh-card" role="dialog" aria-modal="true" aria-labelledby="shTitle">
+    <button class="icon-btn sh-x" aria-label="Close" data-close>✕</button>
+    <h3 id="shTitle">${opened ? "Calendar is opening" : "Subscribe in Apple Calendar"}</h3>
+    ${opened ? `<p>Switch to <b>Calendar</b>. It's asking you to subscribe to “${esc(name)}”. Click <b>Subscribe</b>, then in the next window:</p>
+      <ol>
+        <li>Set <b>Location</b> to <b>On My Mac</b>. iCloud can't reach Rinkside on your Mac, so an iCloud subscription won't load.</li>
+        <li>Untick <b>Alerts</b> under “Remove” if you want the game alerts.</li>
+        <li>Set <b>Auto-refresh</b> to <b>Every hour</b>, then click <b>OK</b>.</li>
+      </ol>`
+    : `<p>If Calendar didn't open, add it by hand. It takes 20 seconds:</p>
+      <ol>
+        <li>Open <b>Calendar</b> and choose <b>File → New Calendar Subscription…</b> (on iPhone: <b>Settings → Apps → Calendar → Calendar Accounts → Add Account → Other → Add Subscribed Calendar</b>).</li>
+        <li>Paste this link and click <b>Subscribe</b>.</li>
+        <li>On a Mac, set <b>Location</b> to <b>On My Mac</b>, not iCloud.</li>
+      </ol>`}
+    <div class="copy"><input readonly value="${esc(http)}" aria-label="Calendar link"><button class="btn ghost sm" data-copy>Copy link</button></div>
+    ${!opened && webcal ? `<p class="muted" style="margin-top:10px">Or try again: <a href="${esc(webcal)}">open in Calendar</a></p>` : ""}
+  </div>`;
+  dlg.hidden = false;
+  const close = () => { dlg.hidden = true; };
+  dlg.onclick = ev => { if (ev.target === dlg || ev.target.closest("[data-close]")) close(); };
+  dlg.querySelector("[data-copy]").onclick = async ev => {
+    const inp = dlg.querySelector(".copy input");
+    try { await navigator.clipboard.writeText(inp.value); toast("Link copied"); } catch(e){ inp.select(); }
+  };
+  document.addEventListener("keydown", function esc_(ev){ if (ev.key === "Escape"){ close(); document.removeEventListener("keydown", esc_); } });
+}
+
+function renderFollows(){
+  const box = $("#follows");
+  if (!follows.length){
+    box.innerHTML = `<div class="muted">Nothing yet. Pick a team or player below.</div>`;
+    $("#subBox").innerHTML = "";
+    return;
+  }
+  box.innerHTML = follows.map((f,i) => `
+    <div class="fol" style="--fc:${followColor(f.key)}">
+      ${avatar(f)}
+      <div style="min-width:0;flex:1">
+        <div class="nm">${esc(f.name)}</div>
+        <div class="dt">${esc(followDetail(f))}</div>
+      </div>
+      <button class="icon-btn cal" title="Subscribe to ${esc(f.name)} in Apple Calendar" data-sub="${i}">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18M12 14v4M10 16h4"/></svg>
+      </button>
+      <button class="icon-btn" title="Unfollow" data-rm="${i}">✕</button>
+    </div>`).join("");
+  box.querySelectorAll("[data-rm]").forEach(b => b.onclick = () => { follows.splice(+b.dataset.rm,1); saveFollows(); if(!follows.some(f=>f.key===filter)) filter="ALL"; refreshAll(); });
+  box.querySelectorAll("[data-sub]").forEach(b => b.onclick = () => { const f = follows[+b.dataset.sub]; subscribe([f.key], f.name + " · Rinkside"); });
+
+  const keys = follows.map(f=>f.key);
+  const lan = lanCalUrl(keys, "My Hockey · Rinkside");
+  const onLocal = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+  $("#subBox").innerHTML = `
+    <button class="btn primary" id="subAll">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+      Subscribe in Apple Calendar
+    </button>
+    <div class="row" style="margin-top:8px;justify-content:space-between">
+      <span class="muted">Alert before each game</span>
+      <select class="sel" id="alarmSel">
+        ${[[0,"None"],[15,"15 min"],[30,"30 min"],[60,"1 hour"],[120,"2 hours"]].map(([v,l])=>`<option value="${v}" ${v==alarm?"selected":""}>${l}</option>`).join("")}
+      </select>
+    </div>
+    <details style="margin-top:10px">
+      <summary>Subscribe on iPhone or copy the link</summary>
+      <div class="muted" style="margin-top:6px">Calendar link for this device:</div>
+      <div class="copy"><input readonly value="${esc(calUrl(keys,"My Hockey · Rinkside"))}"><button class="btn ghost sm" data-copy>Copy</button></div>
+      ${onLocal && lan ? `<div class="muted" style="margin-top:10px">On iPhone/iPad (same Wi-Fi, Mac running Rinkside): open this link in Safari:</div>
+      <div class="copy"><input readonly value="${esc(lan)}"><button class="btn ghost sm" data-copy>Copy</button></div>`:""}
+      <div class="muted" style="margin-top:10px">Calendar checks for updates about once an hour, so time changes and final scores come through automatically.</div>
+    </details>`;
+  $("#subAll").onclick = () => subscribe(keys, "My Hockey · Rinkside");
+  $("#alarmSel").onchange = e => { alarm = +e.target.value; store.set("rinkside.alarm", alarm); renderFollows(); };
+  $("#subBox").querySelectorAll("[data-copy]").forEach(b => b.onclick = async () => {
+    const v = b.previousElementSibling.value;
+    try { await navigator.clipboard.writeText(v); toast("Link copied"); } catch(e){ b.previousElementSibling.select(); }
+  });
+}
+function followDetail(f){
+  const m = meta[f.key];
+  if (m && m.player){
+    const parts = [];
+    if (m.player.team) parts.push(m.player.team.split(":")[1].replace(/-/g," ").replace(/\b\w/g,c=>c.toUpperCase()));
+    if (m.player.nation) parts.push(m.player.nation + " national team");
+    return parts.join(" + ") || "Team not found";
+  }
+  return f.detail || ({NHL:"NHL",PWHL:"PWHL",INTL:"International"})[f.key.split(":")[1]] || "";
+}
+
+function toggleFollow(obj){
+  const i = follows.findIndex(f => f.key === obj.key);
+  if (i >= 0) { follows.splice(i,1); toast(`Unfollowed ${obj.name}`); }
+  else { follows.push(obj); toast(`Following ${obj.name}`); }
+  saveFollows(); refreshAll();
+}
+
+// ---- add pane
+document.querySelectorAll("#tabs button").forEach(b => {
+  b.classList.toggle("on", b.dataset.t === tab);
+  b.onclick = () => { tab = b.dataset.t; store.set("rinkside.tab", tab); document.querySelectorAll("#tabs button").forEach(x=>x.classList.toggle("on", x===b)); renderAdd(); };
+});
+
+async function loadTeams(lg){
+  if (teamCache[lg]) return teamCache[lg];
+  const r = await fetch(`/api/teams?league=${lg}`); const j = await r.json();
+  if (!r.ok) throw new Error(j.error || "failed");
+  teamCache[lg] = j; return j;
+}
+
+async function renderAdd(){
+  const pane = $("#addPane");
+  if (tab === "PLAYER") return renderPlayerSearch();
+  pane.innerHTML = `<input class="search" id="tq" placeholder="Filter ${tab==="INTL"?"countries":"teams"}…"><div class="list" id="tl"><div class="loading"><span class="spin"></span></div></div>`;
+  let data;
+  try { data = await loadTeams(tab); }
+  catch(e){ $("#tl").innerHTML = `<div class="muted" style="padding:10px">Couldn't load teams (${esc(e.message)}). Retrying soon.</div>`; return; }
+  const draw = () => {
+    const q = $("#tq").value.trim().toLowerCase();
+    let html = "", lastG = null;
+    if (tab === "INTL" && data.events?.length && !q){
+      html += `<div class="grp">Tournaments tracked</div>` + data.events.map(e => `<div class="muted" style="padding:2px 8px">${e.league==="OLY"?"🏅":"🌍"} ${esc(e.title)}${e.games ? ` · ${e.games} games` : " · schedule not posted yet"}</div>`).join("");
+    }
+    for (const t of data.teams){
+      if (q && !t.name.toLowerCase().includes(q) && !t.code.toLowerCase().includes(q)) continue;
+      if (t.group && t.group !== lastG){ html += `<div class="grp">${esc(t.group)}</div>`; lastG = t.group; }
+      const on = isFollowed(t.key);
+      html += `<div class="item ${on?"on":""}" data-k="${esc(t.key)}">
+        ${t.logo ? `<img class="logo" src="${esc(t.logo)}" alt="" loading="lazy">` : `<div class="flag">${flagEmoji(t.flag)}</div>`}
+        <div><div class="nm">${esc(tab==="INTL" ? t.name.split(" · ")[0] : t.name)}</div><div class="dt">${esc(tab==="INTL" ? t.group : t.code)}</div></div>
+        <div class="add">${on?"✓":"+"}</div></div>`;
+    }
+    $("#tl").innerHTML = html || `<div class="muted" style="padding:10px">No matches.</div>`;
+    $("#tl").querySelectorAll(".item").forEach(el => el.onclick = () => {
+      const t = data.teams.find(x => x.key === el.dataset.k);
+      const obj = {key:t.key, name: tab==="INTL" ? t.name.replace(" · ", " ") : t.name, detail: tab==="INTL" ? "International · " + t.group : (tab + " · " + t.code)};
+      if (t.logo) obj.logo = t.logo; else obj.flag = t.flag;
+      toggleFollow(obj);
+    });
+  };
+  $("#tq").oninput = draw; draw();
+}
+
+function renderPlayerSearch(){
+  $("#addPane").innerHTML = `
+    <input class="search" id="pq" placeholder="Search NHL & PWHL players, e.g. Celebrini, Poulin" autocomplete="off">
+    <div class="muted" style="margin-top:8px">Following a player adds their team's games plus their national team at IIHF &amp; Olympic events (and World Juniors for eligible NHL prospects).</div>
+    <div class="list" id="pl"></div>`;
+  let h, seq = 0;
+  $("#pq").oninput = e => {
+    clearTimeout(h); const q = e.target.value.trim();
+    if (q.length < 2){ $("#pl").innerHTML = ""; return; }
+    $("#pl").innerHTML = `<div class="loading"><span class="spin"></span></div>`;
+    h = setTimeout(async () => {
+      const my = ++seq;
+      try{
+        const r = await fetch(`/api/search?league=ALL&q=${encodeURIComponent(q)}`); const j = await r.json();
+        if (my !== seq) return;
+        if (!r.ok) throw new Error(j.error);
+        const res = j.results || [];
+        $("#pl").innerHTML = res.length ? res.map((p,i) => `
+          <div class="item ${isFollowed(p.key)?"on":""}" data-i="${i}">
+            ${p.img ? `<img class="mug" src="${esc(p.img)}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'initials',textContent:'${esc(initials(p.name))}'}))">` : `<div class="initials">${esc(initials(p.name))}</div>`}
+            <div style="min-width:0"><div class="nm"><span class="lgb ${esc(p.league)}">${esc(p.league)}</span>${esc(p.name)}</div><div class="dt">${esc(p.detail)}</div></div>
+            <div class="add">${isFollowed(p.key)?"✓":"+"}</div></div>`).join("")
+          : `<div class="muted" style="padding:10px">No NHL or PWHL players match “${esc(q)}”. Try a last name.</div>`;
+        $("#pl").querySelectorAll(".item").forEach(el => el.onclick = () => {
+          const p = res[+el.dataset.i];
+          toggleFollow({key:p.key, name:p.name, detail:p.league + " · " + p.detail, img:p.img||undefined});
+          el.classList.toggle("on"); el.querySelector(".add").textContent = isFollowed(p.key) ? "✓" : "+";
+        });
+      }catch(err){ if (my===seq) $("#pl").innerHTML = `<div class="muted" style="padding:10px">Search failed. Try again in a moment.</div>`; }
+    }, 300);
+  };
+  $("#pq").focus();
+}
+
+// ---- schedule
+const fmtTime = new Intl.DateTimeFormat(undefined,{hour:"numeric",minute:"2-digit"});
+const fmtDay = new Intl.DateTimeFormat(undefined,{weekday:"long",month:"short",day:"numeric"});
+const fmtWk = new Intl.DateTimeFormat(undefined,{weekday:"short"});
+// Games starting 12:00-4:59 AM local are really "the night before" for most fans
+function nightTag(st){
+  if (st.getHours() >= 5) return "";
+  const prev = new Date(st); prev.setDate(prev.getDate() - 1);
+  return `<span class="night" title="Starts after midnight, so it's the night of ${esc(fmtDay.format(prev))}">🌙 ${esc(fmtWk.format(prev))} night</span>`;
+}
+const fmtYear = new Intl.DateTimeFormat(undefined,{year:"numeric"});
+function dayKey(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function dayLabel(d){
+  const today = new Date(); const t0 = dayKey(today);
+  const tm = new Date(today); tm.setDate(today.getDate()+1);
+  const ye = new Date(today); ye.setDate(today.getDate()-1);
+  const k = dayKey(d);
+  if (k===t0) return "Today"; if (k===dayKey(tm)) return "Tomorrow"; if (k===dayKey(ye)) return "Yesterday";
+  return fmtDay.format(d);
+}
+
+function teamHtml(t){
+  const img = t.logo ? `<img src="${esc(t.logo)}" alt="" loading="lazy">` : (t.flag ? `<span class="f">${flagEmoji(t.flag)}</span>` : "");
+  return `${img}<span>${esc(t.name)}</span>`;
+}
+function statusHtml(e){
+  const sc = e.score && e.score[0] != null ? `<div class="score">${e.score[0]}–${e.score[1]}</div>` : "";
+  if (e.status==="live") return `${sc}<div class="st live">Live${e.note?" · "+esc(e.note):""}</div>`;
+  if (e.status==="final") return `${sc}<div class="st">Final${e.note?" / "+esc(e.note):""}</div>`;
+  if (e.status==="postponed"||e.status==="cancelled") return `<div class="st" style="color:var(--live)">${e.status}</div>`;
+  return "";
+}
+function watchHtml(e){
+  const w = e.watch || {};
+  const start = new Date(e.start).getTime(), now = Date.now();
+  // live games, finished games and anything in the next 7 days get links
+  if (!(e.status==="live" || e.status==="final" || start - now < 7*864e5)) return "";
+  const link = (x, cls) => x.url
+    ? `<a class="${cls}" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.label)}${x.note?`<small>${esc(x.note)}</small>`:""}</a>`
+    : `<span class="nolink">${esc(x.label)}${x.note?`<small>${esc(x.note)}</small>`:""}</span>`;
+  const off = (w.official||[]), free = (w.free||[]);
+  if (!off.length && !free.length) return "";
+  const final = e.status==="final";
+  return `<div class="watch">${off.length?`<span class="wl">${final?"Replay":"Watch"}</span>${off.map(x=>link(x,"")).join("")}`:""}${free.length?`<span class="wl" style="margin-left:${off.length?6:0}px">Free</span>${free.map(x=>link(x,"free")).join("")}`:""}</div>`;
+}
+
+// ---- view state: list or month calendar (#calendar)
+let view = location.hash === "#calendar" ? "cal" : "list";
+let calMonth = (() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); })();
+let calSel = dayKey(new Date());
+window.addEventListener("hashchange", () => { view = location.hash === "#calendar" ? "cal" : "list"; renderToolbar(); renderSchedule(); });
+function setView(v){ view = v; history.replaceState(null, "", v === "cal" ? "#calendar" : location.pathname + location.search); renderToolbar(); renderSchedule(); }
+
+// ---- team colours
+// NHL: each club's primary colour; where the primary is black/white, its signature secondary.
+const NHL_COLORS = {
+  ANA:"#F47A38", BOS:"#FFB81C", BUF:"#003087", CGY:"#C8102E", CAR:"#CE1126", CHI:"#CF0A2C",
+  COL:"#6F263D", CBJ:"#002654", DAL:"#006847", DET:"#CE1126", EDM:"#FF4C00", FLA:"#C8102E",
+  LAK:"#A2AAAD", MIN:"#154734", MTL:"#AF1E2D", NSH:"#FFB81C", NJD:"#CE1126", NYI:"#00539B",
+  NYR:"#0038A8", OTT:"#C52032", PHI:"#F74902", PIT:"#FCB514", SJS:"#006D75", SEA:"#68A2B9",
+  STL:"#002F87", TBL:"#002868", TOR:"#00205B", UTA:"#6CACE4", VAN:"#00205B", VGK:"#B4975A",
+  WSH:"#C8102E", WPG:"#041E42"
+};
+// National teams: the colour they wear
+const NATION_COLORS = {
+  CAN:"#D80621", USA:"#0A3161", SWE:"#FECC02", FIN:"#002F6C", CZE:"#D7141A", SVK:"#0B4EA2",
+  SUI:"#D52B1E", GER:"#DD0000", LAT:"#9E3039", NOR:"#BA0C2F", DEN:"#C8102E", AUT:"#ED2939",
+  FRA:"#0055A4", KAZ:"#00AFCA", SLO:"#005DA4", HUN:"#CD2A3E", ITA:"#0064AA", GBR:"#012169",
+  POL:"#DC143C", JPN:"#BC002D", CHN:"#DE2910", KOR:"#003478", UKR:"#0057B7", NED:"#FF6F00"
+};
+const PALETTE = ["#0b5fff","#e5263a","#0f9d58","#f29900","#8e44ef","#00a3bf","#d81b88","#8d6e63"];
+
+// PWHL: read the dominant brand colour straight from each club's official logo
+// Clubs whose logo's dominant colour isn't their jersey colour get pinned by hand.
+const PWHL_PINNED = {"montreal-victoire":"#862633", "toronto-sceptres":"#2E5FAC"};
+const pwhlColors = Object.assign(store.get("rinkside.pwhlColors", {}), PWHL_PINNED);   // slug -> hex
+const pwhlLogos = {};                                       // slug -> logo url
+const pwhlPending = new Set();
+function slugOf(name){ return String(name||"").normalize("NFKD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,""); }
+function rgbToHsl(r,g,b){ r/=255; g/=255; b/=255; const mx=Math.max(r,g,b), mn=Math.min(r,g,b); let h=0,s=0; const l=(mx+mn)/2;
+  if (mx!==mn){ const d=mx-mn; s=l>.5?d/(2-mx-mn):d/(mx+mn); h = mx===r?(g-b)/d+(g<b?6:0) : mx===g?(b-r)/d+2 : (r-g)/d+4; h/=6; } return [h,s,l]; }
+function logoColor(url){
+  return new Promise(resolve => {
+    const img = new Image(); img.crossOrigin = "anonymous";
+    img.onload = () => {
+      try{
+        const N = 64, c = document.createElement("canvas"); c.width = c.height = N;
+        const x = c.getContext("2d", {willReadFrequently:true});
+        const k = Math.min(N/img.naturalWidth || 1, N/img.naturalHeight || 1);
+        const w = Math.max(1, Math.round((img.naturalWidth||N)*k)), h = Math.max(1, Math.round((img.naturalHeight||N)*k));
+        x.drawImage(img, (N-w)/2, (N-h)/2, w, h);
+        const d = x.getImageData(0,0,N,N).data, buckets = {};
+        for (let i=0;i<d.length;i+=4){
+          if (d[i+3] < 200) continue;
+          const [hh,s,l] = rgbToHsl(d[i],d[i+1],d[i+2]);
+          if (l > .93 || l < .07 || s < .2) continue;            // skip white, black, greys
+          const b = Math.round(hh*18) % 18;
+          (buckets[b] ||= {n:0,r:0,g:0,b:0}); const o = buckets[b]; o.n++; o.r+=d[i]; o.g+=d[i+1]; o.b+=d[i+2];
+        }
+        const best = Object.values(buckets).sort((a,b)=>b.n-a.n)[0];
+        if (!best || best.n < 20) return resolve(null);
+        const hex = "#" + [best.r,best.g,best.b].map(v => Math.round(v/best.n).toString(16).padStart(2,"0")).join("");
+        resolve(hex);
+      }catch(e){ resolve(null); }
+    };
+    img.onerror = () => resolve(null);
+    img.src = url;
+  });
+}
+function learnPwhlLogos(list){
+  for (const e of list){
+    if (e.league !== "PWHL") continue;
+    for (const t of [e.away, e.home]) if (t.logo) pwhlLogos[slugOf(t.name)] ||= t.logo;
+  }
+  const want = Object.keys(pwhlLogos).filter(s => !pwhlColors[s] && !pwhlPending.has(s));
+  if (!want.length) return;
+  want.forEach(s => pwhlPending.add(s));
+  Promise.all(want.map(async s => { const c = await logoColor(pwhlLogos[s]); if (c) pwhlColors[s] = c; })).then(() => {
+    Object.assign(pwhlColors, PWHL_PINNED);
+    store.set("rinkside.pwhlColors", pwhlColors);
+    renderToolbar(); renderSchedule(); renderFollows();
+  });
+}
+function tokenColor(tok){
+  if (!tok) return null;
+  const [lg, a, b] = tok.split(":");
+  if (lg === "NHL") return NHL_COLORS[a] || null;
+  if (lg === "PWHL") return pwhlColors[a] || null;
+  if (lg === "INTL") return NATION_COLORS[a] || null;
+  return null;
+}
+function followColor(key){
+  const p = key.split(":");
+  let c = null;
+  if (p[0] === "team") c = tokenColor(p.slice(1).join(":"));
+  else if (p[0] === "player"){
+    const pl = meta[key] && meta[key].player;
+    c = pl && (tokenColor(pl.team) || (pl.nation && tokenColor("INTL:" + pl.nation)));
+  }
+  if (c) return c;
+  const i = follows.findIndex(f => f.key === key);
+  return PALETTE[(i < 0 ? 0 : i) % PALETTE.length];
+}
+function eventColor(e){ const k = filter !== "ALL" ? filter : e.because[0]; return followColor(k); }
+function eventDate(e){ return e.tbd && e.localDate ? new Date(e.localDate + "T12:00:00") : new Date(e.start); }
+const PHASES = {QF:"Quarterfinal",SF:"Semifinal",BMG:"Bronze medal game",GMG:"Gold medal game",REL:"Relegation"};
+
+function renderToolbar(){
+  const chips = [`<button class="chip ${filter==="ALL"?"on":""}" data-f="ALL">All</button>`]
+    .concat(follows.map(f => `<button class="chip ${filter===f.key?"on":""}" data-f="${esc(f.key)}"><span class="cdot" style="--fc:${followColor(f.key)}"></span>${esc(f.name)}</button>`));
+  $("#toolbar").innerHTML = `<div class="seg" role="tablist">
+      <button class="${view==="list"?"on":""}" data-v="list">☰ List</button>
+      <button class="${view==="cal"?"on":""}" data-v="cal">▦ Calendar</button>
+    </div>` + chips.join("") + `<span class="sp"></span>` +
+    (view === "list" ? `<label class="tog"><input type="checkbox" id="pastT" ${showPast?"checked":""}> Recent results</label>` : "");
+  $("#toolbar").querySelectorAll("[data-v]").forEach(b => b.onclick = () => setView(b.dataset.v));
+  $("#toolbar").querySelectorAll("[data-f]").forEach(b => b.onclick = () => { filter = b.dataset.f; renderToolbar(); renderSchedule(); });
+  const pt = $("#pastT"); if (pt) pt.onchange = e => { showPast = e.target.checked; store.set("rinkside.past", showPast); renderSchedule(); };
+  $("#toolbar").style.display = follows.length ? "" : "none";
+}
+
+function gameCardHtml(e){
+  const st = new Date(e.start);
+  const who = e.because.map(k => follows.find(f=>f.key===k)?.name).filter(Boolean);
+  const teamsHtml = e.maybe
+    ? `<span>${esc(e.comp)} · ${esc(PHASES[e.phase] || e.phase || "Playoff")}</span> <span class="tag">if qualified</span>`
+    : `${teamHtml(e.away)}<span class="at">${e.sep==="@"?"@":"vs"}</span>${teamHtml(e.home)}`;
+  return `<div class="game ${e.status==="final"?"past":""}" style="--fc:${eventColor(e)}">
+    <div class="time">${e.tbd ? "TBA" : esc(fmtTime.format(st))}${e.tbd ? "<small>time TBA</small>" : nightTag(st)}</div>
+    <div class="match">
+      <div class="teams">${teamsHtml}</div>
+      <div class="meta"><span class="lg ${e.league}">${e.league==="OLY"?"OLYMPICS":e.league}</span><span>${esc(e.comp)}${e.phase && !e.maybe && e.phase!=="PRE" ? " · "+esc(e.phase) : ""}</span>${e.venue?`<span>· ${esc(e.venue)}</span>`:""}${who.length>1||filter==="ALL"&&follows.length>1?who.map(n=>`<span class="tag">${esc(n)}</span>`).join(""):""}</div>
+      ${watchHtml(e)}
+    </div>
+    <div class="right">${statusHtml(e)}${e.url?`<a class="muted" href="${esc(e.url)}" target="_blank" rel="noopener" style="font-size:12px">Details ↗</a>`:""}</div>
+  </div>`;
+}
+
+function emptyStateHtml(){
+  return `<div class="empty"><h3>Your hockey, in your time zone</h3>
+    Follow NHL or PWHL teams, national teams, or individual players. Every game shows in <b>${esc(TZ.replace(/_/g," "))}</b> time, and one tap puts the schedule in Apple Calendar.
+    <div class="quick">
+      <button class="btn ghost sm" data-q='{"key":"team:NHL:TOR","name":"Toronto Maple Leafs","logo":"https://assets.nhle.com/logos/nhl/svg/TOR_light.svg","detail":"NHL · TOR"}'>+ Maple Leafs</button>
+      <button class="btn ghost sm" data-q='{"key":"team:PWHL:montreal-victoire","name":"Montréal Victoire","detail":"PWHL · MTL"}'>+ Victoire</button>
+      <button class="btn ghost sm" data-q='{"key":"team:INTL:CAN:U20","name":"Canada Men&#39;s U20 (World Juniors)","flag":"CA","detail":"International · World Juniors"}'>+ Canada · World Juniors</button>
+      <button class="btn ghost sm" data-q='{"key":"team:INTL:USA:W","name":"United States Women","flag":"US","detail":"International · Women"}'>+ USA Women</button>
+    </div></div>`;
+}
+
+function renderSchedule(){
+  const box = $("#sched");
+  if (!follows.length){
+    box.innerHTML = emptyStateHtml();
+    box.querySelectorAll("[data-q]").forEach(b => b.onclick = () => toggleFollow(JSON.parse(b.dataset.q)));
+    return;
+  }
+  if (view === "cal") return renderCalendar();
+  const now = Date.now();
+  let list = events.filter(e => filter==="ALL" || e.because.includes(filter));
+  list = showPast
+    ? list.filter(e => new Date(e.start).getTime() > now - 14*864e5)
+    : list.filter(e => e.status==="live" || new Date(e.start).getTime() > now - 3*3600e3 && e.status!=="final");
+  if (!list.length){
+    box.innerHTML = `<div class="empty"><h3>No games to show</h3>${lastFetch ? "Nothing scheduled for this selection yet. Tournament schedules appear here as soon as they're published." : '<span class="spin"></span>'}</div>`;
+    return;
+  }
+  const byDay = new Map();
+  for (const e of list){
+    const d = eventDate(e), k = dayKey(d);
+    if (!byDay.has(k)) byDay.set(k, {d, items:[]});
+    byDay.get(k).items.push(e);
+  }
+  const thisYear = new Date().getFullYear();
+  let html = "";
+  for (const {d, items} of byDay.values()){
+    const lbl = dayLabel(d), rel = /^(Today|Tomorrow|Yesterday)$/.test(lbl);
+    const sub = [rel ? fmtDay.format(d) : "", d.getFullYear()!==thisYear ? fmtYear.format(d) : ""].filter(Boolean).join(", ");
+    html += `<section class="day"><div class="dayh">${esc(lbl)}<span class="sub">${esc(sub)}</span></div>${items.map(gameCardHtml).join("")}</section>`;
+  }
+  box.innerHTML = html;
+}
+
+// ---- month calendar
+function weekStart(){
+  try {
+    const loc = new Intl.Locale(navigator.language || "en-US");
+    const wi = loc.getWeekInfo ? loc.getWeekInfo() : loc.weekInfo;
+    if (wi && wi.firstDay) return wi.firstDay % 7;   // 7 (Sun) -> 0
+  } catch(e){}
+  return ["US","CA","MX","BR","JP","AU","KR","PH","IL"].includes(region) ? 0 : 1;
+}
+const fmtMonth = new Intl.DateTimeFormat(undefined,{month:"long",year:"numeric"});
+const fmtWkHdr = new Intl.DateTimeFormat(undefined,{weekday:"short"});
+const fmtTimeShort = new Intl.DateTimeFormat(undefined,{hour:"numeric",minute:"2-digit"});
+
+function chipLabel(e){
+  if (e.maybe) return `${PHASES[e.phase] || e.phase || "Playoff"} (TBD)`;
+  return `${e.away.code}${e.sep === "@" ? "@" : " v "}${e.home.code}`;
+}
+function chipTime(e){
+  if (e.status === "live") return `<b class="lv">LIVE</b>`;
+  if (e.status === "final" && e.score && e.score[0] != null) return `<b>${e.score[0]}–${e.score[1]}</b>`;
+  if (e.tbd) return "TBA";
+  const st = new Date(e.start);
+  return (st.getHours() < 5 ? "🌙" : "") + esc(fmtTimeShort.format(st).replace(/\s?([AP])\.?M\.?/i, (m,a)=>a.toLowerCase()));
+}
+
+function renderCalendar(){
+  const box = $("#sched");
+  const list = events.filter(e => filter==="ALL" || e.because.includes(filter));
+  const byDay = new Map();
+  for (const e of list){ const k = dayKey(eventDate(e)); if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(e); }
+
+  const ws = weekStart();
+  const first = new Date(calMonth);
+  const offset = (first.getDay() - ws + 7) % 7;
+  const gridStart = new Date(first); gridStart.setDate(1 - offset);
+  const daysInMonth = new Date(first.getFullYear(), first.getMonth()+1, 0).getDate();
+  const weeks = Math.ceil((offset + daysInMonth) / 7);
+  const todayK = dayKey(new Date());
+
+  const hdr = [];
+  for (let i = 0; i < 7; i++){ const d = new Date(2024, 0, 7 + ws + i); hdr.push(`<div class="cal-wd">${esc(fmtWkHdr.format(d))}</div>`); }
+
+  let cells = "";
+  for (let i = 0; i < weeks * 7; i++){
+    const d = new Date(gridStart); d.setDate(gridStart.getDate() + i);
+    const k = dayKey(d), items = byDay.get(k) || [];
+    const out = d.getMonth() !== first.getMonth();
+    const max = 3;
+    cells += `<div class="cal-cell ${out?"out":""} ${k===todayK?"today":""} ${k===calSel?"sel":""} ${items.length?"has":""}" data-k="${k}" role="button" tabindex="0" aria-label="${esc(fmtDay.format(d))}, ${items.length} game${items.length===1?"":"s"}">
+      <div class="cal-num">${d.getDate()}</div>
+      <div class="cal-evs">${items.slice(0, max).map(e => `<div class="ev ${e.status} L-${e.league}" style="--fc:${eventColor(e)}" title="${esc(event_title_js(e))}"><span class="evt">${chipTime(e)}</span> <span class="evn">${esc(chipLabel(e))}</span></div>`).join("")}${items.length > max ? `<div class="more">+${items.length - max} more</div>` : ""}</div>
+      <div class="cal-dots">${items.slice(0,4).map(e => `<i class="L-${e.league}" style="--fc:${eventColor(e)}"></i>`).join("")}</div>
+    </div>`;
+  }
+
+  const selItems = byDay.get(calSel) || [];
+  const selDate = new Date(calSel + "T12:00:00");
+  const monthCount = list.filter(e => { const d = eventDate(e); return d.getMonth()===first.getMonth() && d.getFullYear()===first.getFullYear(); }).length;
+
+  box.innerHTML = `
+    <div class="cal-head">
+      <button class="icon-btn" id="calPrev" aria-label="Previous month">‹</button>
+      <h3>${esc(fmtMonth.format(first))}</h3>
+      <button class="icon-btn" id="calNext" aria-label="Next month">›</button>
+      <span class="muted">${lastFetch ? `${monthCount} game${monthCount===1?"":"s"}` : `<span class="spin" style="vertical-align:-3px"></span> Loading games…`}</span>
+      <span class="sp"></span>
+      <button class="btn ghost sm" id="calToday">Today</button>
+    </div>
+    <div class="cal-grid">${hdr.join("")}${cells}</div>
+    <div class="cal-legend" aria-label="Legend">
+      <span><i class="lg-sw L-NHL"></i>NHL</span>
+      <span><i class="lg-sw L-PWHL"></i>★ PWHL</span>
+      <span><i class="lg-sw L-IIHF"></i>IIHF &amp; Olympics</span>
+      <span class="muted">Colour = team you follow</span>
+    </div>
+    <section class="day cal-day">
+      <div class="dayh">${esc(dayLabel(selDate))}<span class="sub">${/^(Today|Tomorrow|Yesterday)$/.test(dayLabel(selDate)) ? esc(fmtDay.format(selDate)) : ""}</span></div>
+      ${selItems.length ? selItems.map(gameCardHtml).join("") : `<div class="muted" style="padding:16px">No games on this day.</div>`}
+    </section>`;
+
+  $("#calPrev").onclick = () => { calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth()-1, 1); renderCalendar(); };
+  $("#calNext").onclick = () => { calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth()+1, 1); renderCalendar(); };
+  $("#calToday").onclick = () => { const d = new Date(); calMonth = new Date(d.getFullYear(), d.getMonth(), 1); calSel = dayKey(d); renderCalendar(); };
+  box.querySelectorAll(".cal-cell").forEach(c => {
+    const pick = () => {
+      calSel = c.dataset.k;
+      const d = new Date(calSel + "T12:00:00");
+      if (d.getMonth() !== calMonth.getMonth()) calMonth = new Date(d.getFullYear(), d.getMonth(), 1);
+      renderCalendar();
+      if ((byDay.get(calSel) || []).length) $(".cal-day").scrollIntoView({behavior:"smooth", block:"nearest"});
+    };
+    c.onclick = pick;
+    c.onkeydown = ev => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); pick(); } };
+  });
+}
+function event_title_js(e){
+  const t = e.maybe ? `${e.comp} ${PHASES[e.phase] || e.phase || ""} (if qualified)` : `${e.away.name} ${e.sep==="@"?"@":"vs"} ${e.home.name}`;
+  return `${e.tbd ? "Time TBA" : fmtTime.format(new Date(e.start))} · ${t}`;
+}
+
+function renderFresh(status){
+  const ago = s => { const m = Math.round((Date.now()/1000 - s)/60); return m<1?"just now":m<60?m+" min ago":Math.round(m/60)+" h ago"; };
+  const anyErr = Object.values(status||{}).some(v => !v.ok);
+  $("#freshDot").className = "dot" + (anyErr ? " stale" : "");
+  $("#freshTxt").textContent = lastFetch ? `Updated ${new Date(lastFetch).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})}` : "Loading…";
+  const src = {NHL:"NHL · api-web.nhle.com", PWHL:"PWHL · thepwhl.com", IIHF:"IIHF & Olympics · stats.iihf.com", "IIHF discovery":"Tournament discovery · stats.iihf.com"};
+  $("#sources").innerHTML = Object.entries(src).map(([k,label]) => {
+    const v = (status||{})[k];
+    return `<div><span class="dot ${!v?"stale":v.ok?"":"err"}"></span>${esc(label)} <span style="margin-left:auto">${v&&v.at?ago(v.at):v?"failed":"waiting"}</span></div>`;
+  }).join("") + `<div style="margin-top:6px">The server refreshes every few minutes, and this page re-checks every 2 minutes. PWHL player teams come from Wikipedia.</div>`;
+}
+
+async function fetchSchedule(){
+  if (!follows.length){ events=[]; renderSchedule(); return; }
+  const keys = follows.map(f=>f.key).join(",");
+  try{
+    const r = await fetch(`/api/schedule?f=${encodeURIComponent(keys)}&region=${encodeURIComponent(region)}&past=240`); const j = await r.json();
+    if (!r.ok) throw new Error(j.error);
+    if (keys !== follows.map(f=>f.key).join(",")) return;
+    events = j.events; meta = j.meta || {}; lastFetch = Date.now();
+    learnPwhlLogos(events);
+    renderFresh(j.status); renderFollows(); renderSchedule();
+  }catch(e){
+    $("#freshDot").className = "dot err"; $("#freshTxt").textContent = "Offline. Retrying";
+    if (!events.length) $("#sched").innerHTML = `<div class="empty"><h3>Couldn't reach the server</h3>Make sure <code>python3 server.py</code> is running.</div>`;
+  }
+}
+
+function refreshAll(){ renderFollows(); renderToolbar(); renderSchedule(); fetchSchedule(); if (tab!=="PLAYER") renderAdd(); }
+
+async function init(){
+  setupRegion(); renderFollows(); renderToolbar(); renderSchedule(); renderAdd();
+  try { const s = await (await fetch("/api/status")).json(); lanUrl = s.lan; renderFresh(s.status); renderFollows(); } catch(e){}
+  fetchSchedule();
+  setInterval(fetchSchedule, 120000);
+  setInterval(renderSchedule, 60000); // keep "Today"/live filtering current
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && Date.now()-lastFetch > 60000) fetchSchedule(); });
+}
+init();
+</script>
+</body>
+</html>
